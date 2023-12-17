@@ -16,32 +16,58 @@
       <p>Total Negative Comments: {{ response.total_negative_comments }}</p>
       <button @click="downloadCSV">Download CSV</button>
     </div>
+    <div v-if="response">
+      <h2>Overall Word Cloud</h2>
+      <vue-word-cloud :words="wordCloudData" style="height: 480px; width: 640px;">
+      </vue-word-cloud>
+
+      <h2>Positive Word Cloud</h2>
+      <vue-word-cloud :words="posWordCloud" style="height: 480px; width: 640px;">
+      </vue-word-cloud>
+
+      <h2>Negative Word Cloud</h2>
+      <vue-word-cloud :words="negWordCloud" style="height: 480px; width: 640px;">
+      </vue-word-cloud>
+  </div>
   </div>
 </template>
 
 <script>
+import VueWordCloud from 'vuewordcloud';
 import axios from 'axios'; // Import axios
 export default {
+  components: {
+    [VueWordCloud.name]: VueWordCloud,
+  },
   data() {
     return {
       videoUrl: "",
       response: null,
+      wordCloudData: [],
+      posWordCloud: [],
+      negWordCloud: [],
     };
   },
   methods: {
     analyzeVideo() {
       // Send a POST request to your Flask backend
-      console.log('Analyze clicked')
-      axios
-        .post("http://127.0.0.1:5000/analyze", {
+      axios({
+        method: 'post', // Use POST request
+        url: 'http://127.0.0.1:5000/analyze',
+        data: {
           video_url: this.videoUrl,
-        })
-        .then((response) => {
+        }
+      }).then((response) => {
           this.response = response.data;
+          this.wordCloudData = response.data.word_cloud_data;
+          this.posWordCloud = response.data.pos_word_cloud;
+          this.negWordCloud = response.data.neg_word_cloud;
         })
         .catch((error) => {
           console.error("Error:", error);
         });
+      console.log('Analyze clicked')
+      
     },
     downloadCSV() {
       axios({

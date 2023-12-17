@@ -5,12 +5,14 @@ import re
 from googleapiclient.discovery import build
 import requests
 from youtube_transcript_api import YouTubeTranscriptApi
+from collections import Counter
+from nltk.corpus import stopwords
 
 class yt_classifier():
 
     def __init__(self):
         self.classifier = TextClassifier.load('en-sentiment')
-        self.api = build('youtube', 'v3', developerKey="<API_KEY>")
+        self.api = build('youtube', 'v3', developerKey="API_KEY")
 
     def clean_text(self, text):
         # Remove HTML tags
@@ -26,8 +28,7 @@ class yt_classifier():
         words = text.split()
         
         # Remove stopwords (common words like "the", "and", etc.)
-        stopwords = set(["the", "and", "is", "it", "to", "i", "you", "u", "a", "in", "for", "so", "that", "when"])
-        words = [word for word in words if word not in stopwords]
+        words = [word for word in words if word not in stopwords.words('english')]
         
         # Remove extra whitespace
         cleaned_text = ' '.join(words)
@@ -89,8 +90,12 @@ class yt_classifier():
 
         # Create a DataFrame from the processed comments
         df = pd.DataFrame(processed_comments, columns=["Original Comment", "Cleaned Comment", "Sentiment"])
-
-        return df
+        pos_df = df[df['Sentiment'] == 'pos']
+        neg_df = df[df['Sentiment'] == 'neg']
+        word_frequencies = self.calculate_word_frequencies(df['Cleaned Comment'])
+        pos_freq = self.calculate_word_frequencies(pos_df['Cleaned Comment'])
+        neg_freq = self.calculate_word_frequencies(neg_df['Cleaned Comment'])
+        return df, word_frequencies,pos_freq,neg_freq
     
     def get_vid_details(self,video_url):
         video_id = self.extract_video_id(video_url)
@@ -119,3 +124,18 @@ class yt_classifier():
         
     def export_to_csv(df, output_file):
         df.to_csv(output_file, index=False)
+
+    def calculate_word_frequencies(self, comments):
+       # Combine all comments into a single string
+        all_comments = ' '.join(comments)
+
+        # Tokenize the combined comments
+        words = all_comments.split()
+
+        # Calculate word frequencies
+        word_freq = Counter(words)
+
+        # Convert word frequencies to the expected format (list of lists)
+        word_freq_list = [[word, freq] for word, freq in word_freq.items()]
+
+        return word_freq_list

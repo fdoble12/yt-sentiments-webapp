@@ -21,7 +21,7 @@ def analyze_video():
             return jsonify({'error': 'Invalid input: video_url is required'}), 400
 
         # Process and classify comments for the video
-        df = classifier.process_and_classify_comments(video_url)
+        df, word_frequencies, pos_freq, neg_freq = classifier.process_and_classify_comments(video_url)
 
         # Calculate and send the counts in the response
         video_title = classifier.get_vid_details(video_url)
@@ -33,7 +33,10 @@ def analyze_video():
             'total_comments': total_comments,
             'total_positive_comments': total_positive_comments,
             'total_negative_comments': total_negative_comments,
-            'video_title': video_title
+            'video_title': video_title,
+            'word_cloud_data': word_frequencies,
+            'pos_word_cloud': pos_freq,
+            'neg_word_cloud': neg_freq
         }
 
         return jsonify(response_data)
